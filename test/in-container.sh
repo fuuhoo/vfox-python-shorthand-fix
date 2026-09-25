@@ -3,8 +3,8 @@
 # already has vfox, the python plugin and two python patch versions installed.
 #
 # Why the nesting below looks awkward: `vfox exec` never runs the PreUse hook
-# (only UseWithConfig does, internal/sdk/sdk.go:567) and `vfox use` refuses to
-# switch without the shell hook, so every switch has to happen in an interactive
+# (only UseWithConfig -> preUse does) and `vfox use` refuses to switch without
+# the shell hook, so every switch has to happen in an interactive
 # bash. bash -i echoes the fed script back, hence the '##' markers.
 set -uo pipefail
 

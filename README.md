@@ -3,7 +3,7 @@
 让 `vfox use python@3.12` 这种**大版本号**写法在 vfox-python 插件下正常工作。
 
 针对 `version-fox/vfox-python` **v0.6.2**（2026-09-12 发布的最新 release，问题仍未修复），
-在 **vfox 1.0.12 / Linux** 上实测有效；对 vfox 0.4～1.x 的其它版本应当同样适用（判定逻辑来自核心代码）。
+在 **vfox 1.0.12 / Linux** 上实测有效；判定逻辑来自 vfox 核心代码，同系列 v1.x 预计一致（未逐一实测）。
 
 ```console
 $ vfox use --global python@3.12
@@ -22,7 +22,7 @@ nodejs / golang 等插件没有这个问题。
 
 ## 根因
 
-vfox 核心的版本解析（`internal/sdk/sdk.go` 的 `preUse()`，1.0.12 在 469 行）规则是：
+vfox 核心的版本解析（`internal/sdk/sdk.go` 的 `preUse()`，v1.0.12 在 456 行）规则是：
 
 ```go
 if b.plugin.HasFunction("PreUse") {
