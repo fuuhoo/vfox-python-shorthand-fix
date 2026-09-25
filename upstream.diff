@@ -1,0 +1,80 @@
+--- a/hooks/pre_use.lua
++++ b/hooks/pre_use.lua
+@@ -1,40 +1,59 @@
++-- vfox-python v0.6.2 hooks/pre_use.lua, modified so that a shorthand version
++-- ("3.12") resolves to an installed patch version ("3.12.14").
++-- See README.md for the root cause and upstream.diff for the exact change.
+ require("util")
+ 
++--- Expand a shorthand version such as "3.12" into the highest installed
++--- version that carries it ("3.12.14"), the same rule vfox core applies in
++--- internal/sdk/sdk.go preUse(). Returns nil when nothing is installed for it.
++local function resolveInstalledVersion(version, installedSdks)
++    if version == nil or installedSdks == nil then
++        return nil
++    end
++    if installedSdks[version] ~= nil then
++        return version
++    end
++
++    local prefix = version .. "."
++    local best = nil
++    for name in pairs(installedSdks) do
++        if type(name) == "string" and name:sub(1, #prefix) == prefix then
++            if best == nil or compare_versions(name, best) > 0 then
++                best = name
++            end
++        end
++    end
++    return best
++end
++
+ -- PreUse hook: Called before switching to a Python version
+ -- This ensures the target version is healthy and has correct shebang lines
+ function PLUGIN:PreUse(ctx)
++    local resolved = resolveInstalledVersion(ctx.version, ctx.installedSdks)
++
+     -- Only process on Unix systems (Windows doesn't have shebang issues)
+     if OS_TYPE == "windows" then
+         return {
+-            version = ctx.version
++            version = resolved or ctx.version
+         }
+     end
+ 
+-    local version = ctx.version
++    local version = resolved
+     local previousVersion = ctx.previousVersion
+     local scope = ctx.scope
+     local cwd = ctx.cwd
+     local installedSdks = ctx.installedSdks
+ 
+-    print("Preparing Python " .. version .. " for use...")
+-
+-    -- Find the target version in installed versions
+-    local targetVersion = nil
+-    for versionKey, sdkInfo in pairs(installedSdks) do
+-        if versionKey == version then
+-            targetVersion = sdkInfo
+-            break
+-        end
++    if not version then
++        -- Hand the request back to vfox so it can report the version as
++        -- unusable instead of silently switching to a non-existent one.
++        print("Warning: Target version " .. ctx.version .. " is not installed")
++        return ""
+     end
+ 
+-    if not targetVersion then
+-        print("Warning: Target version " .. version .. " not found in installed versions")
+-        return {
+-            version = version
+-        }
+-    end
++    print("Preparing Python " .. version .. " for use...")
+ 
+-    local installPath = resolvePythonInstallPath(targetVersion.path, version)
++    local installPath = resolvePythonInstallPath(installedSdks[version].path, version)
+     print("Checking Python installation at: " .. installPath)
+ 
+     -- Perform health check
